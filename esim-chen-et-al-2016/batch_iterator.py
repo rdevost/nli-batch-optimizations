@@ -1,21 +1,24 @@
-import cPickle as pkl
 import gzip
-import numpy as np
-import random
 import math
+import pickle as pkl
+import random
 
-def fopen(filename, mode='r'):
+import numpy as np
+
+
+def fopen(filename: str, mode: str='r') -> open:
     if filename.endswith('.gz'):
         return gzip.open(filename, mode)
     return open(filename, mode)
 
+
 class TextIterator:
     """Simple Bitext iterator."""
-    def __init__(self, source, target, label,
-                 dict,
-                 batch_size=128,
-                 n_words=-1,
-                 shuffle=True):
+    def __init__(self, source: str, target: str, label: str,
+                 dict: str,
+                 batch_size: int=128,
+                 n_words: int=-1,
+                 shuffle: bool=True):
         self.source = fopen(source, 'r')
         self.target = fopen(target, 'r')
         self.label = fopen(label, 'r')
@@ -63,8 +66,6 @@ class TextIterator:
         assert len(self.source_buffer) == len(self.target_buffer), 'Buffer size mismatch!'
         assert len(self.source_buffer) == len(self.label_buffer), 'Buffer size mismatch!'
         if len(self.source_buffer) == 0:
-            proper_batch=False
-
             while True:
                 try:
                     ss = self.source.readline()
@@ -100,11 +101,9 @@ class TextIterator:
                         if len(self.label_2)>=self.k:
                             self.current=2
                             break
-
                 except IOError:
                     self.end_of_data = True
                 if self.current==-1:
-
                     self.do_all=True
                     if(len(self.label_0)>0):
                         self.current=0
@@ -117,10 +116,8 @@ class TextIterator:
                         self.end_of_data = False
                         self.reset()
                         raise StopIteration
-            for k_ in xrange(self.k):
+            for k_ in range(self.k):
                 try:
-
-
                     if self.current == 0 :
                         s=self.source_0.pop(0)
                         t=self.target_0.pop(0)
@@ -161,15 +158,15 @@ class TextIterator:
                 self.source_buffer = _sbuf
                 self.target_buffer = _tbuf
                 self.label_buffer = _lbuf
-        if len(self.source_buffer) == 0 or len(self.target_buffer) == 0 or len(self.label_buffer) == 0:
+        if (len(self.source_buffer) == 0
+            or len(self.target_buffer) == 0
+            or len(self.label_buffer) == 0):
                 self.end_of_data = False
                 self.reset()
                 raise StopIteration
 
-
         # actual work here
         while True:
-
             # read from source file and map to word index
             try:
                 ss = self.source_buffer.pop(0)
@@ -199,9 +196,9 @@ class TextIterator:
             target.append(tt)
             label.append(ll)
 
-            if len(source) >= self.batch_size or \
-                    len(target) >= self.batch_size or \
-                    len(label) >= self.batch_size:
+            if (len(source) >= self.batch_size
+                    or len(target) >= self.batch_size
+                    or len(label) >= self.batch_size):
                 break
 
         if len(source) <= 0 or len(target) <= 0 or len(label) <= 0:

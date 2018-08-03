@@ -1,13 +1,15 @@
-import sys
-import os
-import numpy
-import pickle as pkl
-
 from collections import OrderedDict
+import os
+import pickle as pkl
+from typing import List
+
+import numpy
 
 dic = {'entailment': '0', 'neutral': '1', 'contradiction': '2'}
 
-def build_dictionary(filepaths, dst_path, lowercase=False):
+
+def build_dictionary(filepaths: List[str], dst_path: str, lowercase: bool=False):
+    """Make and pickle an OrderedDict of words and frequencies."""
     word_freqs = OrderedDict()
     for filepath in filepaths:
         print ('Processing', filepath)
@@ -29,7 +31,7 @@ def build_dictionary(filepaths, dst_path, lowercase=False):
     sorted_words = [words[ii] for ii in sorted_idx[::-1]]
     print(len(sorted_words))
     worddict = OrderedDict()
-    worddict['_PAD_'] = 0 # default, padding 
+    worddict['_PAD_'] = 0 # default, padding
     worddict['_UNK_'] = 1 # out-of-vocabulary
     worddict['_BOS_'] = 2 # begin of sentence token
     worddict['_EOS_'] = 3 # end of sentence token
@@ -44,7 +46,8 @@ def build_dictionary(filepaths, dst_path, lowercase=False):
     print ('Done')
 
 
-def build_sequence(filepath, dst_dir, isTest=False):
+def build_sequence(filepath: str, dst_dir: str, isTest: bool=False):
+    """Write premise, hypthesis, and label files to disk."""
     filename = os.path.basename(filepath)
     print (filename)
     len_p = []
@@ -77,7 +80,7 @@ def build_sequence(filepath, dst_dir, isTest=False):
     print ('max min len hypothesis', max(len_h), min(len_h))
 
 
-def make_dirs(dirs):
+def make_dirs(dirs: List[str]):
     for d in dirs:
         if not os.path.exists(d):
             os.makedirs(d)
@@ -97,6 +100,6 @@ if __name__ == '__main__':
     # build_sequence(os.path.join(multinli_dir, 'multinli_0.9_test_matched_unlabeled.txt'), dst_dir, isTest=True)
     # build_sequence(os.path.join(multinli_dir, 'multinli_0.9_test_mismatched_unlabeled.txt'), dst_dir, isTest=True)
 
-    build_dictionary([os.path.join(dst_dir, 'premise_multinli_1.0_train.txt'), 
-                      os.path.join(dst_dir, 'hypothesis_multinli_1.0_train.txt')], 
+    build_dictionary([os.path.join(dst_dir, 'premise_multinli_1.0_train.txt'),
+                      os.path.join(dst_dir, 'hypothesis_multinli_1.0_train.txt')],
                       os.path.join(dst_dir, 'vocab_cased.pkl'))

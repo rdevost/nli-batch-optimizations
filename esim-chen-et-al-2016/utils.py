@@ -1,19 +1,12 @@
-
 # coding: utf-8
+from typing import List
 
-# In[4]:
-
-
-import torch
-from data_iterator import TextIterator
 import numpy
+import torch
 from torch.autograd import Variable
 
 
-# In[5]:
-
-
-def prepare_data(seqs_x, seqs_y, labels, maxlen=None):
+def prepare_data(seqs_x: List[str], seqs_y: List[str], labels: List[str], maxlen=None):
     lengths_x = [len(s) for s in seqs_x]
     lengths_y = [len(s) for s in seqs_y]
 
@@ -55,7 +48,7 @@ def prepare_data(seqs_x, seqs_y, labels, maxlen=None):
         x_mask = torch.zeros(maxlen_x, n_samples)
         y_mask = torch.zeros(maxlen_y, n_samples)
         l = torch.zeros(n_samples,).long()
-   
+
     for idx, [s_x, s_y, ll] in enumerate(zip(seqs_x, seqs_y, labels)):
         if torch.cuda.is_available():
             x[:lengths_x[idx], idx] = torch.Tensor(s_x).cuda()
@@ -71,10 +64,3 @@ def prepare_data(seqs_x, seqs_y, labels, maxlen=None):
             l[idx] = int(ll)
 
     return Variable(x), Variable(x_mask), Variable(y), Variable(y_mask), Variable(l)
-
-
-# In[ ]:
-
-
-
-

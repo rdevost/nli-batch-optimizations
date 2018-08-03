@@ -1,4 +1,4 @@
-name: nlu-project
+name: esim
 channels:
     - conda-forge
     - pytorch

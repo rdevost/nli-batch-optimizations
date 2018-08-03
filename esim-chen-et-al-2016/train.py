@@ -1,17 +1,17 @@
+from collections import OrderedDict
 import logging
-from utils import prepare_data
-import torch
-from torch.autograd import Variable
-from torch.nn.parameter import Parameter
-import pickle as pkl
-import numpy as np
-import torch.nn as nn
-import torch.nn.functional as F
-from model import ESIM
-from batch_iterator import TextIterator
-import time
 import os
+import pickle as pkl
+import time
+
+import numpy as np
+import torch
+import torch.nn as nn
 import torch.optim as optim
+
+from .batch_iterator import TextIterator
+from .model import ESIM
+from .utils import prepare_data
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +42,12 @@ test_datasets=[]
 dictionary=''
 embedding='data/glove.840B.300d.txt'  # pretrain embedding file, such as word2vec, GLOVE
 
+logging.basicConfig(filename='log' + str(time.time()) + '.log', level=logging.DEBUG)
 
 
-def return_embeddings(embedding, vocabulary_size, embedding_dim, worddicts):
-
+def return_embeddings(embedding: str, vocabulary_size: int, embedding_dim: int,
+                      worddicts: OrderedDict) -> np.ndarray:
+    """Create array of word embeddings."""
     word_embeddings = np.zeros((vocabulary_size, dim_word))
     with open(embedding, 'r') as f:
         for line in f:
@@ -61,58 +63,24 @@ def return_embeddings(embedding, vocabulary_size, embedding_dim, worddicts):
                 vector = [float(x) for x in vector]
                 word_embeddings[worddicts[word], :] = vector[0:300]
     return word_embeddings
-### Neural Network and Optimizer
-# We define neural net in model.py so that it can be reused by the evaluate.py script
-logging.basicConfig(filename='log' + str(time.time()) + '.log', level=logging.DEBUG)
-
-print 'Loading data'
-train_set = TextIterator('word_sequence/premise_multinli_1.0_train.txt',
-                         'word_sequence/hypothesis_multinli_1.0_train.txt',
-                         'word_sequence/label_multinli_1.0_train.txt',
-                         'word_sequence/vocab_cased.pkl',
-                         n_words=n_words,
-                         batch_size=batch_size)
-valid_set = TextIterator('word_sequence/premise_multinli_1.0_dev_matched.txt',
-                         'word_sequence/hypothesis_multinli_1.0_dev_matched.txt',
-                         'word_sequence/label_multinli_1.0_dev_matched.txt',
-                         'word_sequence/vocab_cased.pkl',
-                         n_words=n_words,
-                         batch_size=valid_batch_size,
-                         shuffle=False)
-
-test_set = TextIterator('word_sequence/premise_multinli_1.0_dev_mismatched.txt',
-                        'word_sequence/hypothesis_multinli_1.0_dev_mismatched.txt',
-                        'word_sequence/label_multinli_1.0_dev_mismatched.txt',
-                        'word_sequence/vocab_cased.pkl',
-                        n_words=n_words,
-                        batch_size=valid_batch_size,
-                        shuffle=False)
-with open('word_sequence/vocab_cased.pkl', 'rb') as f:
-    worddicts = pkl.load(f)
-emb = return_embeddings(embedding=embedding, vocabulary_size=n_words, embedding_dim=dim_word, worddicts=worddicts)
-
-from model import ESIM
 
 
-def checkpoint(epoch):
+def checkpoint(epoch: int):
+    """Create a checkpoint."""
     model_out_path = "modelt_epoch_{}.pth".format(epoch)
     torch.save(model, model_out_path)
     logger.debug("Checkpoint saved to {}".format(model_out_path))
 
 
-def checkpoint_valid(epoch):
+def checkpoint_valid(epoch: int):
+    """Create a checkpoint for a valid run."""
     model_out_path = "model_valid_{}.pth".format(epoch)
     torch.save(model, model_out_path)
     logger.debug("Checkpoint saved to {}".format(model_out_path))
 
 
-if reload_ and os.path.exists(saveto):
-    print 'Reload options'
-    with open('%s' % saveto, 'rb') as f:
-        model = torch.load(saveto)
-else:
-    model = ESIM(batch_size=batch_size, dim_hidden=dim, embedding_dim=dim_word, embeddings=emb, vocab_size=n_words).cuda()
-def pred_acc(iterator):
+def pred_acc(iterator: TextIterator) -> (float, float):
+    """Get prediction accuracy."""
     model.eval()
     valid_acc = 0
     n_done = 0
@@ -133,13 +101,11 @@ def pred_acc(iterator):
         tot_loss+=loss.data[0]
     valid_acc = 1.0 * valid_acc / n_done
     avg_loss=tot_loss/n
-    return valid_acc,avg_loss
+    return valid_acc, avg_loss
 
-print 'Optimization'
-optimizer = optim.Adam(model.parameters(), lr=lrate)
-ce_loss = nn.CrossEntropyLoss()
 
-def train(epoch):
+def train(epoch: int):
+    """Train model."""
     model.train()
     batch_idx=0
     for p, h, l in train_set:
@@ -157,15 +123,59 @@ def train(epoch):
         batch_idx+=1
 
 
+### Neural Network and Optimizer
+print('Loading data')
+logger.info('Loading data.')
+train_set = TextIterator('word_sequence/premise_multinli_1.0_train.txt',
+                         'word_sequence/hypothesis_multinli_1.0_train.txt',
+                         'word_sequence/label_multinli_1.0_train.txt',
+                         'word_sequence/vocab_cased.pkl',
+                         n_words=n_words,
+                         batch_size=batch_size)
+valid_set = TextIterator('word_sequence/premise_multinli_1.0_dev_matched.txt',
+                         'word_sequence/hypothesis_multinli_1.0_dev_matched.txt',
+                         'word_sequence/label_multinli_1.0_dev_matched.txt',
+                         'word_sequence/vocab_cased.pkl',
+                         n_words=n_words,
+                         batch_size=valid_batch_size,
+                         shuffle=False)
+test_set = TextIterator('word_sequence/premise_multinli_1.0_dev_mismatched.txt',
+                        'word_sequence/hypothesis_multinli_1.0_dev_mismatched.txt',
+                        'word_sequence/label_multinli_1.0_dev_mismatched.txt',
+                        'word_sequence/vocab_cased.pkl',
+                        n_words=n_words,
+                        batch_size=valid_batch_size,
+                        shuffle=False)
 
-best_acc=0.
-bad_ctr=0
+with open('word_sequence/vocab_cased.pkl', 'rb') as f:
+    worddicts = pkl.load(f)
+
+emb = return_embeddings(embedding=embedding, vocabulary_size=n_words, embedding_dim=dim_word,
+                        worddicts=worddicts)
+
+
+if reload_ and os.path.exists(saveto):
+    print('Reload options')
+    with open('%s' % saveto, 'rb') as f:
+        model = torch.load(saveto)
+else:
+    model = ESIM(batch_size=batch_size, dim_hidden=dim, embedding_dim=dim_word, vocab_size=n_words,
+                 embeddings=emb).cuda()
+
+
+print('Optimization')
+optimizer = optim.Adam(model.parameters(), lr=lrate)
+ce_loss = nn.CrossEntropyLoss()
+
+
+best_acc = 0.
+bad_ctr = 0
 for epoch in range(max_epochs):
     train(epoch)
 
-    acc,l=pred_acc(valid_set)
+    acc, l = pred_acc(valid_set)
     logger.debug('Epoch ' + str(epoch) + ' Valid Accuracy = ' + str(acc))
-    if acc>best_acc:
+    if acc > best_acc:
         best_acc=acc
         checkpoint_valid(epoch)
     '''else:
@@ -174,7 +184,7 @@ for epoch in range(max_epochs):
         lrate*=0.5
         optimizer = optim.Adam(model.parameters(), lr=lrate)
         bad_ctr=0'''
-    if epoch % saveFreq ==0:
-        acc,l = pred_acc(train_set)
+    if epoch % saveFreq == 0:
+        acc, l = pred_acc(train_set)
         logger.debug('Epoch ' + str(epoch) + ' Train Accuracy = ' + str(acc))
         checkpoint(epoch)
