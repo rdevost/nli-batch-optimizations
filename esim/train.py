@@ -126,23 +126,23 @@ def train(epoch: int):
 ### Neural Network and Optimizer
 print('Loading data')
 logger.info('Loading data.')
-train_set = TextIterator('word_sequence/premise_multinli_1.0_train.txt',
-                         'word_sequence/hypothesis_multinli_1.0_train.txt',
-                         'word_sequence/label_multinli_1.0_train.txt',
-                         'word_sequence/vocab_cased.pkl',
+train_set = TextIterator('data/word_sequence/premise_multinli_1.0_train.txt',
+                         'data/word_sequence/hypothesis_multinli_1.0_train.txt',
+                         'data/word_sequence/label_multinli_1.0_train.txt',
+                         'data/word_sequence/vocab_cased.pkl',
                          n_words=n_words,
                          batch_size=batch_size)
-valid_set = TextIterator('word_sequence/premise_multinli_1.0_dev_matched.txt',
-                         'word_sequence/hypothesis_multinli_1.0_dev_matched.txt',
-                         'word_sequence/label_multinli_1.0_dev_matched.txt',
-                         'word_sequence/vocab_cased.pkl',
+valid_set = TextIterator('data/word_sequence/premise_multinli_1.0_dev_matched.txt',
+                         'data/word_sequence/hypothesis_multinli_1.0_dev_matched.txt',
+                         'data/word_sequence/label_multinli_1.0_dev_matched.txt',
+                         'data/word_sequence/vocab_cased.pkl',
                          n_words=n_words,
                          batch_size=valid_batch_size,
                          shuffle=False)
-test_set = TextIterator('word_sequence/premise_multinli_1.0_dev_mismatched.txt',
-                        'word_sequence/hypothesis_multinli_1.0_dev_mismatched.txt',
-                        'word_sequence/label_multinli_1.0_dev_mismatched.txt',
-                        'word_sequence/vocab_cased.pkl',
+test_set = TextIterator('data/word_sequence/premise_multinli_1.0_dev_mismatched.txt',
+                        'data/word_sequence/hypothesis_multinli_1.0_dev_mismatched.txt',
+                        'data/word_sequence/label_multinli_1.0_dev_mismatched.txt',
+                        'data/word_sequence/vocab_cased.pkl',
                         n_words=n_words,
                         batch_size=valid_batch_size,
                         shuffle=False)
